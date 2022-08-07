@@ -9,6 +9,7 @@ enum Api {
   GetUserInfo = '/getUserInfo',
   GetPermCode = '/getPermCode',
   TestRetry = '/testRetry',
+  List = '/sys/user/list',
 }
 
 /**
@@ -39,6 +40,10 @@ export function getPermCode() {
 
 export function doLogout() {
   return defHttp.get({ url: Api.Logout });
+}
+
+export function getUserList() {
+  return defHttp.get({ url: Api.List });
 }
 
 export function testRetry() {

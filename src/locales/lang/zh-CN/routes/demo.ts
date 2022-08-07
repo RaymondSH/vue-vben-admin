@@ -169,6 +169,7 @@ export default {
     dept: '部门管理',
     menu: '菜单管理',
     role: '角色管理',
+    dict: '字典配置',
   },
   table: {
     table: 'Table',

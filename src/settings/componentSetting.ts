@@ -9,7 +9,7 @@ export default {
     // support xxx.xxx.xxx
     fetchSetting: {
       // The field name of the current page passed to the background
-      pageField: 'page',
+      pageField: 'pageNo',
       // The number field name of each page displayed in the background
       sizeField: 'pageSize',
       // Field name of the form data returned by the interface
@@ -47,5 +47,19 @@ export default {
     // Whether to use native scroll bar
     // After opening, the menu, modal, drawer will change the pop-up scroll bar to native
     native: false,
+  },
+
+  //表单配置
+  form: {
+    labelCol: {
+      xs: { span: 24 },
+      sm: { span: 4 },
+    },
+    wrapperCol: {
+      xs: { span: 24 },
+      sm: { span: 18 },
+    },
+    //表单默认冒号
+    colon: true,
   },
 };
