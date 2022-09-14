@@ -6,12 +6,14 @@ export const columns: BasicColumn[] = [
   {
     title: '字典名称',
     dataIndex: 'dictName',
-    width: 240,
   },
   {
-    title: '字典编号',
+    title: '字典编码',
     dataIndex: 'dictCode',
-    width: 240,
+  },
+  {
+    title: '字典类型',
+    dataIndex: 'dictType_dictText',
   },
   {
     title: '描述',
@@ -56,6 +58,18 @@ export const formSchema: FormSchema[] = [
     },
     dynamicRules: ({ model, schema }) =>
       rules.duplicateCheckRule('sys_dict', 'dict_code', model, schema, true),
+  },
+  {
+    label: '状态',
+    field: 'dictType',
+    required: true,
+    component: 'DictSelectTag',
+    defaultValue: 1,
+    componentProps: {
+      dictCode: 'dict_type',
+      placeholder: '请选择字典类型',
+      stringToNumber: true,
+    },
   },
   {
     label: '描述',
@@ -157,7 +171,7 @@ export const itemFormSchema: FormSchema[] = [
   {
     field: 'status',
     label: '是否启用',
-    defaultValue: 1,
+    defaultValue: 0,
     component: 'DictSelectTag',
     componentProps: {
       type: 'radioButton',

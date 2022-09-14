@@ -14,7 +14,7 @@ import {
 import { useTimeoutFn } from '/@/hooks/core/useTimeout';
 import { buildUUID } from '/@/utils/uuid';
 import { isFunction, isBoolean } from '/@/utils/is';
-import { get, cloneDeep, merge } from 'lodash-es';
+import { get, cloneDeep } from 'lodash-es';
 import { FETCH_SETTING, ROW_KEY, PAGE_SIZE } from '../const';
 
 interface ActionType {
@@ -159,7 +159,6 @@ export function useDataSource(
       return row;
     }
   }
-
   function deleteTableDataRecord(rowKey: string | number | string[] | number[]) {
     if (!dataSourceRef.value || dataSourceRef.value.length == 0) return;
     const rowKeyName = unref(getRowKey);
@@ -196,12 +195,12 @@ export function useDataSource(
   }
 
   function insertTableDataRecord(record: Recordable, index: number): Recordable | undefined {
-    // if (!dataSourceRef.value || dataSourceRef.value.length == 0) return;
+    if (!dataSourceRef.value || dataSourceRef.value.length == 0) return;
     index = index ?? dataSourceRef.value?.length;
     unref(dataSourceRef).splice(index, 0, record);
-    return unref(dataSourceRef);
+    unref(propsRef).dataSource?.splice(index, 0, record);
+    return unref(propsRef).dataSource;
   }
-
   function findTableDataRecord(rowKey: string | number) {
     if (!dataSourceRef.value || dataSourceRef.value.length == 0) return;
 
@@ -271,32 +270,33 @@ export function useDataSource(
 
       const { sortInfo = {}, filterInfo } = searchState;
 
-      let params: Recordable = merge(
-        pageParams,
-        useSearchForm ? getFieldsValue() : {},
-        searchInfo,
-        opt?.searchInfo ?? {},
-        defSort,
-        sortInfo,
-        filterInfo,
-        opt?.sortInfo ?? {},
-        opt?.filterInfo ?? {},
-      );
+      let params: Recordable = {
+        ...pageParams,
+        ...(useSearchForm ? getFieldsValue() : {}),
+        ...searchInfo,
+        ...defSort,
+        ...(opt?.searchInfo ?? {}),
+        ...sortInfo,
+        ...filterInfo,
+        ...(opt?.sortInfo ?? {}),
+        ...(opt?.filterInfo ?? {}),
+      };
       if (beforeFetch && isFunction(beforeFetch)) {
         params = (await beforeFetch(params)) || params;
       }
 
       const res = await api(params);
+      console.log(res);
       rawDataSourceRef.value = res;
 
       const isArrayResult = Array.isArray(res);
 
       let resultItems: Recordable[] = isArrayResult ? res : get(res, listField);
-      const resultTotal: number = isArrayResult ? res.length : get(res, totalField);
+      const resultTotal: number = isArrayResult ? 0 : get(res, totalField);
 
       // 假如数据变少，导致总页数变少并小于当前选中页码，通过getPaginationRef获取到的页码是不正确的，需获取正确的页码再次执行
       if (resultTotal) {
-        const currentTotalPage = Math.ceil(resultTotal / pageSize);
+        const currentTotalPage = Math.ceil(Number(resultTotal) / pageSize);
         if (current > currentTotalPage) {
           setPagination({
             current: currentTotalPage,
@@ -310,7 +310,7 @@ export function useDataSource(
       }
       dataSourceRef.value = resultItems;
       setPagination({
-        total: resultTotal || 0,
+        total: Number(resultTotal) || 0,
       });
       if (opt && opt.page) {
         setPagination({
@@ -319,7 +319,7 @@ export function useDataSource(
       }
       emit('fetch-success', {
         items: unref(resultItems),
-        total: resultTotal,
+        total: Number(resultTotal),
       });
       return resultItems;
     } catch (error) {

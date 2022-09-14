@@ -1,5 +1,12 @@
 <template>
-  <a-tree-select v-bind="getAttrs" @change="handleChange">
+  <a-tree-select
+    v-bind="getAttrs"
+    :tree-default-expand-all="expandAll"
+    :tree-checkable="checkable"
+    :multiple="multiple"
+    :style="style"
+    @change="handleChange"
+  >
     <template #[item]="data" v-for="item in Object.keys($slots)">
       <slot :name="item" v-bind="data || {}"></slot>
     </template>
@@ -22,6 +29,23 @@
     props: {
       api: { type: Function as PropType<(arg?: Recordable) => Promise<Recordable>> },
       params: { type: Object },
+      checkable: {
+        type: Boolean,
+        default: false,
+      },
+      // 支持多选（当设置 checkable 时自动变为 true
+      multiple: {
+        type: Boolean,
+        default: false,
+      },
+      expandAll: {
+        type: Boolean,
+        default: true,
+      },
+      style: {
+        type: String,
+        default: 'width: 350px',
+      },
       immediate: { type: Boolean, default: true },
       resultField: propTypes.string.def(''),
     },

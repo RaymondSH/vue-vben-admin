@@ -1,7 +1,7 @@
 <template>
   <BasicDrawer
     v-bind="$attrs"
-    @register="registerDrawer"
+    @register="userDrawer"
     :title="getTitle"
     width="500"
     @ok="handleSubmit"
@@ -11,14 +11,12 @@
   </BasicDrawer>
 </template>
 <script lang="ts" setup>
-  import { ref, computed, unref, useAttrs } from 'vue';
+  import { ref, computed, unref } from 'vue';
   import { BasicForm, useForm } from '/@/components/Form/index';
   import { formSchema } from './userForm';
   import { BasicDrawer, useDrawerInner } from '/@/components/Drawer';
-  // import { saveOrUpdateUser, getUserRoles, getUserDepartList } from '/@/api/system/user';
   // 声明Emits
   const emit = defineEmits(['success', 'register']);
-  const attrs = useAttrs();
   const isUpdate = ref(true);
   const rowId = ref('');
   const departOptions = ref([]);
@@ -31,7 +29,7 @@
     },
   );
   //表单赋值
-  const [registerDrawer, { setDrawerProps, closeDrawer }] = useDrawerInner(async (data) => {
+  const [userDrawer, { setDrawerProps, closeDrawer }] = useDrawerInner(async (data) => {
     await resetFields();
     let showFooter = data?.showFooter ?? true;
     setDrawerProps({ confirmLoading: false, showFooter });

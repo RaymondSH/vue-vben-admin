@@ -1,20 +1,22 @@
 import { BasicColumn } from '/@/components/Table';
 import { FormSchema } from '/@/components/Table';
+import { getAllRoles } from '/@/api/system/role';
+import { listAllDepart } from '/@/api/system/depart';
 export const columns: BasicColumn[] = [
   {
     title: '用户账号',
     dataIndex: 'username',
-    width: 120,
+    width: 100,
   },
   {
-    title: '用户姓名',
-    dataIndex: 'realname',
+    title: '员工工号',
+    dataIndex: 'workNo',
     width: 100,
   },
 
   {
     title: '性别',
-    dataIndex: 'sex',
+    dataIndex: 'sex_dictText',
     width: 80,
     sorter: true,
   },
@@ -71,8 +73,8 @@ export const recycleColumns: BasicColumn[] = [
 
 export const searchFormSchema: FormSchema[] = [
   {
-    label: '真实名称',
-    field: 'realname',
+    label: '用户账号',
+    field: 'username',
     component: 'Input',
     colProps: { span: 6 },
   },
@@ -116,6 +118,25 @@ export const formSchema: FormSchema[] = [
     label: '确认密码',
     field: 'confirmPassword',
     component: 'InputPassword',
+  },
+  {
+    label: '角色',
+    field: 'selectedRoles',
+    component: 'ApiSelect',
+    componentProps: {
+      mode: 'tags',
+      api: getAllRoles,
+      labelField: 'roleName',
+      valueField: 'id',
+    },
+  },
+  {
+    label: '所属部门',
+    field: 'selectedDeparts',
+    component: 'ApiTreeSelect',
+    componentProps: {
+      api: listAllDepart,
+    },
   },
   {
     label: '负责部门',

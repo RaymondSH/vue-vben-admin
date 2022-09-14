@@ -9,10 +9,10 @@ enum Api {
   add = '/sys/dict/add',
   edit = '/sys/dict/edit',
   getDictItems = '/sys/dict/getDictItem',
-  deleteDict = '',
-  batchDeleteDict = '',
-  refreshCache = '',
-  queryAllDictItems = '',
+  deleteDict = '/sys/dict/delete',
+  batchDeleteDict = '/sys/dict/batchDelete',
+  refreshCache = '/sys/dict/refreshCache',
+  queryAllDictItems = '/sys/dict/queryAllDictItems',
   itemList = '/sys/dictItem/list',
   itemAdd = '/sys/dictItem/add',
   itemEdit = '/sys/dictItem/edit',
@@ -22,20 +22,24 @@ export function list() {
   return defHttp.get({ url: Api.list });
 }
 
-export function deleteDict() {
-  return defHttp.get({ url: Api.deleteDict });
+export function deleteDict(id: String, handleSuccess) {
+  return defHttp
+    .delete({ url: Api.deleteDict, params: { id: id } }, { joinParamsToUrl: true })
+    .then(() => handleSuccess());
 }
 
-export function batchDeleteDict() {
-  return defHttp.get({ url: Api.batchDeleteDict });
+export function batchDeleteDict(params, handleSuccess) {
+  return defHttp
+    .delete({ url: Api.batchDeleteDict, params }, { joinParamsToUrl: true })
+    .then(() => handleSuccess());
 }
 
 export function refreshCache() {
-  return defHttp.get({ url: Api.refreshCache });
+  return defHttp.get({ url: Api.refreshCache }, { isTransformResponse: false });
 }
 
 export function queryAllDictItems() {
-  return defHttp.get({ url: Api.queryAllDictItems });
+  return defHttp.get({ url: Api.queryAllDictItems }, { isTransformResponse: false });
 }
 
 /**
@@ -43,8 +47,11 @@ export function queryAllDictItems() {
  * @param params
  */
 export const saveOrUpdateDict = (params, isUpdate: Boolean) => {
-  const url = isUpdate ? Api.edit : Api.add;
-  return defHttp.post({ url: url, params });
+  if (isUpdate) {
+    return defHttp.put({ url: Api.edit, params });
+  } else {
+    return defHttp.post({ url: Api.add, params });
+  }
 };
 
 /**
@@ -52,16 +59,23 @@ export const saveOrUpdateDict = (params, isUpdate: Boolean) => {
  * @param params
  */
 export const saveOrUpdateDictItem = (params, isUpdate: Boolean) => {
-  const url = isUpdate ? Api.itemEdit : Api.itemAdd;
-  return defHttp.post({ url: url, params });
+  if (isUpdate) {
+    return defHttp.put({ url: Api.itemEdit, params });
+  } else {
+    return defHttp.post({ url: Api.itemAdd, params });
+  }
 };
 
 export function itemList(params) {
   return defHttp.get({ url: Api.itemList, params });
 }
 
-export function deleteItem(id: any, reload?: any) {
-  return defHttp.get({ url: Api.itemDelete, params: { id, reload } });
+export function deleteItem(itemId: String, handleSuccess) {
+  return defHttp
+    .delete({ url: Api.itemDelete, params: { id: itemId } }, { joinParamsToUrl: true })
+    .then(() => {
+      handleSuccess();
+    });
 }
 
 export function duplicateCheck(params: any) {

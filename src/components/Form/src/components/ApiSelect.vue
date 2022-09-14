@@ -3,6 +3,8 @@
     @dropdown-visible-change="handleFetch"
     v-bind="$attrs"
     @change="handleChange"
+    :mode="mode"
+    :style="style"
     :options="getOptions"
     v-model:value="state"
   >
@@ -41,6 +43,14 @@
     },
     inheritAttrs: false,
     props: {
+      mode: {
+        type: String,
+        default: 'combobox',
+      },
+      style: {
+        type: String,
+        default: 'width: 350px',
+      },
       value: [Array, Object, String, Number],
       numberToString: propTypes.bool,
       api: {

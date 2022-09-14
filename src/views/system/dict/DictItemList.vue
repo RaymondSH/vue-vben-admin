@@ -97,7 +97,7 @@
    * 删除
    */
   async function handleDelete(record) {
-    await deleteItem({ id: record.id }, reload);
+    await deleteItem(record.id, reload);
   }
 
   /**
@@ -119,7 +119,7 @@
     ];
   }
   function getRowClassName(record) {
-    return record.status == 0 ? prefixCls : '';
+    return record.status == 1 ? prefixCls : '';
   }
 </script>
 <script lang="ts">

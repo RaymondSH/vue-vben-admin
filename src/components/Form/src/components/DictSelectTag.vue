@@ -69,7 +69,7 @@
     },
     emits: ['options-change', 'change'],
     setup(props) {
-      console.log('props:' + props);
+      console.log(props);
       const emitData = ref<any[]>([]);
       const dictOptions = ref<any[]>([]);
       const attrs = useAttrs();
@@ -88,7 +88,6 @@
 
       async function initDictData() {
         let { dictCode, stringToNumber } = props;
-        console.log('---------------------' + dictCode);
         //根据字典Code, 初始化字典数组
         const dictData = await initDictOptions(dictCode);
         dictOptions.value = dictData.reduce((prev, next) => {

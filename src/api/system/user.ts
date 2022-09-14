@@ -10,6 +10,7 @@ enum Api {
   GetPermCode = '/getPermCode',
   TestRetry = '/testRetry',
   List = '/sys/user/list',
+  userListByRole = '/sys/user/getUserListByRole',
 }
 
 /**
@@ -40,6 +41,10 @@ export function getPermCode() {
 
 export function doLogout() {
   return defHttp.get({ url: Api.Logout });
+}
+
+export function getUserListByRole(params?: any) {
+  return defHttp.get({ url: Api.userListByRole, params });
 }
 
 export function getUserList() {

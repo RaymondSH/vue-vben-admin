@@ -78,7 +78,7 @@ export function transformObjToRoute<T = AppRouteModule>(routeList: AppRouteModul
       } else {
         route.children = [cloneDeep(route)];
         route.component = LAYOUT;
-        route.name = `${route.name}Parent`;
+        route.name = `${route.name}`;
         route.path = '';
         const meta = route.meta || {};
         meta.single = true;

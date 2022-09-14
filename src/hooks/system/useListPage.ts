@@ -52,7 +52,7 @@ export function useListPage(options: ListPageOptions) {
   if (options.designScope) {
     $design = useDesign(options.designScope);
   }
-
+  console.log('-------------------');
   const tableContext = useListTable(options.tableProps);
 
   const [, { getForm, reload, setLoading }, { selectedRowKeys }] = tableContext;

@@ -111,7 +111,7 @@
    * 删除事件
    */
   async function handleDelete(record) {
-    await deleteDict({ id: record.id }, reload);
+    await deleteDict(record.id, reload);
   }
   /**
    * 批量删除事件
@@ -136,7 +136,7 @@
     const result = await refreshCache();
     if (result.success) {
       const res = await queryAllDictItems();
-      clearAuthCache(DB_DICT_DATA_KEY);
+      clearAuthCache();
       setAuthCache(DB_DICT_DATA_KEY, res.result);
       createMessage.success('刷新缓存完成！');
     } else {

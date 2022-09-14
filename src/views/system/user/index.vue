@@ -7,7 +7,6 @@
         <a-button type="primary" preIcon="ant-design:plus-outlined" @click="handleCreate">
           新增</a-button
         >
-        <a-button type="primary" preIcon="ant-design:filter-outlined"> 高级查询</a-button>
         <a-dropdown v-if="selectedRowKeys.length > 0">
           <template #overlay>
             <a-menu>
@@ -40,26 +39,21 @@
       </template>
     </BasicTable>
     <!--用户抽屉-->
-    <UserDrawer @register="registerDrawer" @success="handleSuccess" />
+    <UserDrawer @register="userDrawer" @success="handleSuccess" />
   </div>
 </template>
 
 <script lang="ts" name="system-user" setup>
   //ts语法
-  import { ref } from 'vue';
   import { BasicTable, TableAction, ActionItem } from '/@/components/Table';
   import UserDrawer from './UserDrawer.vue';
   import { useDrawer } from '/@/components/Drawer';
   import { useListPage } from '/@/hooks/system/useListPage';
-  import { useMessage } from '/@/hooks/web/useMessage';
   import { columns, searchFormSchema } from './userForm';
   import { getUserList } from '/@/api/system/user';
 
-  const { createMessage, createConfirm } = useMessage();
-
-  const selectRows = ref([]);
   //注册drawer
-  const [registerDrawer, { openDrawer }] = useDrawer();
+  const [userDrawer, { openDrawer }] = useDrawer();
 
   // 列表页面公共参数、方法
   const { prefixCls, tableContext, onExportXls, onImportXls } = useListPage({
@@ -77,6 +71,7 @@
         width: 120,
       },
       beforeFetch: (params) => {
+        console.log(params);
         return Object.assign({ column: 'createTime', order: 'desc' }, params);
       },
     },

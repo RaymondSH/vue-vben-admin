@@ -215,6 +215,7 @@ export class VAxios {
             try {
               const ret = transformResponseHook(res, opt);
               resolve(ret);
+              console.log(ret);
             } catch (err) {
               reject(err || new Error('request error!'));
             }

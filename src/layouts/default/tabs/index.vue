@@ -70,7 +70,7 @@
 
       const { prefixCls } = useDesign('multiple-tabs');
       const go = useGo();
-      const { getShowQuick, getShowRedo, getShowFold } = useMultipleTabSetting();
+      const { getShowQuick, getShowRedo, getShowFold, getTabsTheme } = useMultipleTabSetting();
 
       const getTabsState = computed(() => {
         return tabStore.getTabList.filter((item) => !item.meta?.hideTab);
@@ -141,4 +141,6 @@
 </script>
 <style lang="less">
   @import './index.less';
+  //@import './tabs.theme.card.less';
+  //@import './tabs.theme.smooth.less';
 </style>
