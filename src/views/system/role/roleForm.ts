@@ -27,7 +27,7 @@ export const columns: BasicColumn[] = [
 
 export const searchFormSchema: FormSchema[] = [
   {
-    field: 'name',
+    field: 'title',
     label: '菜单名称',
     component: 'Input',
     colProps: { span: 8 },

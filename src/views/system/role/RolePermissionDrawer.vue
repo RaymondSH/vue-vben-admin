@@ -51,7 +51,7 @@
   import { BasicTree, TreeItem } from '/@/components/Tree';
   import { PopConfirmButton } from '/@/components/Button';
   import {
-    rolePermissionTreeList,
+    getRolePermissionTreeList,
     getRolePermission,
     saveRolePermission,
   } from '/@/api/system/role';
@@ -75,7 +75,7 @@
     setDrawerProps({ confirmLoading: false, loading: true });
     roleId.value = data.roleId;
     //初始化数据
-    const roleResult = await rolePermissionTreeList();
+    const roleResult = await getRolePermissionTreeList();
     console.log(roleResult);
     treeData.value = roleResult.treeList;
     allTreeKeys.value = roleResult.ids;

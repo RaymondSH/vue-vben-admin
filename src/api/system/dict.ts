@@ -46,25 +46,25 @@ export function queryAllDictItems() {
  * 保存或者更新字典
  * @param params
  */
-export const saveOrUpdateDict = (params, isUpdate: Boolean) => {
+export function saveOrUpdateDict(params, isUpdate: Boolean) {
   if (isUpdate) {
     return defHttp.put({ url: Api.edit, params });
   } else {
     return defHttp.post({ url: Api.add, params });
   }
-};
+}
 
 /**
  * 保存或者更新字典
  * @param params
  */
-export const saveOrUpdateDictItem = (params, isUpdate: Boolean) => {
+export function saveOrUpdateDictItem(params, isUpdate: Boolean) {
   if (isUpdate) {
     return defHttp.put({ url: Api.itemEdit, params });
   } else {
     return defHttp.post({ url: Api.itemAdd, params });
   }
-};
+}
 
 export function itemList(params) {
   return defHttp.get({ url: Api.itemList, params });
@@ -90,17 +90,17 @@ export function dictItemCheck(params: any) {
  * 从缓存中获取字典配置
  * @param code
  */
-export const getDictItemsByCode = (code) => {
+export function getDictItemsByCode(code) {
   if (getAuthCache(DB_DICT_DATA_KEY) && getAuthCache<String>(DB_DICT_DATA_KEY)[code]) {
     return getAuthCache<String>(DB_DICT_DATA_KEY)[code];
   }
-};
+}
 /**
  * 获取字典数组
  * @param dictCode 字典Code
  * @return List<Map>
  */
-export const initDictOptions = (code) => {
+export function initDictOptions(code) {
   //1.优先从缓存中读取字典配置
   if (getDictItemsByCode(code)) {
     return new Promise((resolve) => {
@@ -109,4 +109,4 @@ export const initDictOptions = (code) => {
   }
   //2.获取字典数组
   return defHttp.get({ url: Api.getDictItems + '/' + code });
-};
+}

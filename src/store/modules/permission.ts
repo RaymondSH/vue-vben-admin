@@ -18,8 +18,7 @@ import { ERROR_LOG_ROUTE, PAGE_NOT_FOUND_ROUTE } from '/@/router/routes/basic';
 
 import { filter } from '/@/utils/helper/treeHelper';
 
-import { getMenuList } from '/@/api/system/menu';
-import { getPermCode } from '/@/api/system/user';
+import { getMenuList, getPermCode } from '/@/api/system/menu';
 
 import { useMessage } from '/@/hooks/web/useMessage';
 import { PageEnum } from '/@/enums/pageEnum';
@@ -116,8 +115,7 @@ export const usePermissionStore = defineStore({
 
       let routes: AppRouteRecordRaw[] = [];
       const roleList = toRaw(userStore.getRoleList) || [];
-      // const { permissionMode = projectSetting.permissionMode } = appStore.getProjectConfig;
-      const permissionMode = PermissionModeEnum.BACK;
+      const { permissionMode = projectSetting.permissionMode } = appStore.getProjectConfig;
       // 路由过滤器 在 函数filter 作为回调传入遍历使用
       const routeFilter = (route: AppRouteRecordRaw) => {
         const { meta } = route;
@@ -167,7 +165,6 @@ export const usePermissionStore = defineStore({
         }
         return;
       };
-      console.log(permissionMode);
       switch (permissionMode) {
         // 角色权限
         case PermissionModeEnum.ROLE:
@@ -203,7 +200,6 @@ export const usePermissionStore = defineStore({
           // Convert multi-level routing to level 2 routing
           // 将多级路由转换为 2 级路由
           routes = flatMultiLevelRoutes(routes);
-          console.log(routes);
           break;
 
         //  If you are sure that you do not need to do background dynamic permissions, please comment the entire judgment below
@@ -237,26 +233,16 @@ export const usePermissionStore = defineStore({
 
           const backMenuList = transformRouteToMenu(routeList);
           this.setBackMenuList(backMenuList);
-          console.log('backMenuList');
-          console.log(backMenuList);
           // remove meta.ignoreRoute item
           // 删除 meta.ignoreRoute 项
-          console.log('routeRemoveIgnoreFilter');
-          console.log(routeRemoveIgnoreFilter);
           routeList = filter(routeList, routeRemoveIgnoreFilter);
-          console.log(routeList);
           routeList = routeList.filter(routeRemoveIgnoreFilter);
-          console.log('after  routeRemoveIgnoreFilter');
-          console.log(routeList);
           routeList = flatMultiLevelRoutes(routeList);
-          console.log(routeList);
           routes = [PAGE_NOT_FOUND_ROUTE, ...routeList];
-          console.log(routes);
           break;
       }
 
       routes.push(ERROR_LOG_ROUTE);
-      console.log(routes);
       patchHomeAffix(routes);
       return routes;
     },

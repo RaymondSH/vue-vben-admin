@@ -5,7 +5,7 @@ import { Tinymce } from '/@/components/Tinymce';
 import Icon from '/@/components/Icon';
 import { getDictItemsByCode } from '/@/api/system/dict';
 import { filterMultiDictText } from '/@/utils/dict';
-import { isEmpty, isNullOrUnDef } from "/@/utils/is";
+import { isEmpty, isNullOrUnDef } from '/@/utils/is';
 
 const render = {
   /**
@@ -43,8 +43,7 @@ const render = {
    */
   renderDict: (v, code, renderTag = false) => {
     let text = '';
-    const array = getDictItemsByCode(code);
-    console.log(array);
+    const array = getDictItemsByCode(code) as any;
     if (isNullOrUnDef(array)) {
       return code;
     }

@@ -4,7 +4,7 @@ import { defineStore } from 'pinia';
 import { store } from '/@/store';
 import { RoleEnum } from '/@/enums/roleEnum';
 import { PageEnum } from '/@/enums/pageEnum';
-import { ROLES_KEY, TOKEN_KEY, USER_INFO_KEY } from '/@/enums/cacheEnum';
+import { DB_DICT_DATA_KEY, ROLES_KEY, TOKEN_KEY, USER_INFO_KEY } from '/@/enums/cacheEnum';
 import { getAuthCache, setAuthCache } from '/@/utils/auth';
 import { GetUserInfoModel, LoginParams } from '/@/api/system/model/userModel';
 import { doLogout, getUserInfo, loginApi } from '/@/api/system/user';
@@ -16,11 +16,13 @@ import { RouteRecordRaw } from 'vue-router';
 import { PAGE_NOT_FOUND_ROUTE } from '/@/router/routes/basic';
 import { isArray } from '/@/utils/is';
 import { h } from 'vue';
+import { queryAllDictItems } from '/@/api/system/dict';
 
 interface UserState {
   userInfo: Nullable<UserInfo>;
   token?: string;
   roleList: RoleEnum[];
+  dictItems?: [];
   sessionTimeout?: boolean;
   lastUpdateTime: number;
 }
@@ -34,6 +36,8 @@ export const useUserStore = defineStore({
     token: undefined,
     // roleList
     roleList: [],
+    // 字典
+    dictItems: [],
     // Whether the login expired
     sessionTimeout: false,
     // Last fetch time
@@ -70,6 +74,10 @@ export const useUserStore = defineStore({
       this.lastUpdateTime = new Date().getTime();
       setAuthCache(USER_INFO_KEY, info);
     },
+    setAllDictItems(dictItems: []) {
+      this.dictItems = dictItems;
+      setAuthCache(DB_DICT_DATA_KEY, dictItems);
+    },
     setSessionTimeout(flag: boolean) {
       this.sessionTimeout = flag;
     },
@@ -104,7 +112,10 @@ export const useUserStore = defineStore({
       if (!this.getToken) return null;
       // get user info
       const userInfo = await this.getUserInfoAction();
-
+      const queryDictRes = await queryAllDictItems();
+      if (queryDictRes.success) {
+        this.setAllDictItems(queryDictRes.result);
+      }
       const sessionTimeout = this.sessionTimeout;
       if (sessionTimeout) {
         this.setSessionTimeout(false);

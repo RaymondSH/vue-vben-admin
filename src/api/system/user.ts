@@ -4,13 +4,11 @@ import { LoginParams, LoginResultModel, GetUserInfoModel } from './model/userMod
 import { ErrorMessageMode } from '/#/axios';
 
 enum Api {
-  Login = '/login',
-  Logout = '/logout',
-  GetUserInfo = '/getUserInfo',
-  GetPermCode = '/getPermCode',
-  TestRetry = '/testRetry',
-  List = '/sys/user/list',
-  userListByRole = '/sys/user/getUserListByRole',
+  login = '/login',
+  list = '/sys/user/list',
+  logout = '/sys/user/logout',
+  getUserInfo = '/sys/user/getUserInfo',
+  testRetry = '/testRetry',
 }
 
 /**
@@ -19,7 +17,7 @@ enum Api {
 export function loginApi(params: LoginParams, mode: ErrorMessageMode = 'modal') {
   return defHttp.post<LoginResultModel>(
     {
-      url: Api.Login,
+      url: Api.login,
       params,
     },
     {
@@ -32,28 +30,20 @@ export function loginApi(params: LoginParams, mode: ErrorMessageMode = 'modal') 
  * @description: getUserInfo
  */
 export function getUserInfo() {
-  return defHttp.get<GetUserInfoModel>({ url: Api.GetUserInfo }, { errorMessageMode: 'none' });
-}
-
-export function getPermCode() {
-  return defHttp.get<string[]>({ url: Api.GetPermCode });
+  return defHttp.get<GetUserInfoModel>({ url: Api.getUserInfo }, { errorMessageMode: 'none' });
 }
 
 export function doLogout() {
-  return defHttp.get({ url: Api.Logout });
-}
-
-export function getUserListByRole(params?: any) {
-  return defHttp.get({ url: Api.userListByRole, params });
+  return defHttp.get({ url: Api.logout });
 }
 
 export function getUserList() {
-  return defHttp.get({ url: Api.List });
+  return defHttp.get({ url: Api.list });
 }
 
 export function testRetry() {
   return defHttp.get(
-    { url: Api.TestRetry },
+    { url: Api.testRetry },
     {
       retryRequest: {
         isOpenRetry: true,

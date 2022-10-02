@@ -137,6 +137,7 @@
     if (result.success) {
       const res = await queryAllDictItems();
       clearAuthCache();
+      console.log('clearAuthCache');
       setAuthCache(DB_DICT_DATA_KEY, res.result);
       createMessage.success('刷新缓存完成！');
     } else {

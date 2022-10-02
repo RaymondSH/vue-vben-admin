@@ -2,6 +2,8 @@ import { BasicColumn } from '/@/components/Table';
 import { FormSchema } from '/@/components/Table';
 import { duplicateCheck } from '/@/api/system/dict';
 import { render } from '/@/utils/common/renderUtils';
+import { Icon } from '/@/components/Icon';
+import { h } from 'vue';
 const isDir = (type) => type === 0;
 // const isMenu = (type) => type === 1;
 const isButton = (type) => type === 2;
@@ -15,14 +17,14 @@ export enum ComponentTypes {
 export const columns: BasicColumn[] = [
   {
     title: '菜单名称',
-    dataIndex: 'name',
-    width: 200,
+    dataIndex: 'title',
     align: 'left',
+    width: 100,
   },
   {
-    title: '菜单类型',
+    title: '类型',
     dataIndex: 'menuType',
-    width: 150,
+    width: 100,
     customRender: ({ text }) => {
       return render.renderDict(text, 'menu_type');
     },
@@ -30,10 +32,16 @@ export const columns: BasicColumn[] = [
   {
     title: '图标',
     dataIndex: 'icon',
-    width: 50,
-    // customRender: ({ record }) => {
-    //   return h(Icon, { icon: record.icon });
-    // },
+    width: 80,
+    customRender: ({ text }) => {
+      return h(Icon, { icon: text });
+    },
+  },
+  {
+    title: '路由名称',
+    dataIndex: 'name',
+    align: 'left',
+    width: 100,
   },
   {
     title: '组件',
@@ -42,21 +50,27 @@ export const columns: BasicColumn[] = [
     width: 150,
   },
   {
-    title: '路径',
-    dataIndex: 'url',
+    title: '访问路径',
+    dataIndex: 'path',
+    align: 'left',
+    width: 150,
+  },
+  {
+    title: '默认地址',
+    dataIndex: 'redirect',
     align: 'left',
     width: 150,
   },
   {
     title: '排序',
-    dataIndex: 'sortNo',
+    dataIndex: 'orderNo',
     width: 50,
   },
 ];
 
 export const searchFormSchema: FormSchema[] = [
   {
-    field: 'name',
+    field: 'title',
     label: '菜单名称',
     component: 'Input',
     colProps: { span: 8 },
@@ -103,7 +117,7 @@ export const formSchema: FormSchema[] = [
     },
   },
   {
-    field: 'name',
+    field: 'title',
     label: '菜单名称',
     component: 'Input',
     required: true,
@@ -127,12 +141,19 @@ export const formSchema: FormSchema[] = [
     ifShow: ({ values }) => !isDir(values.menuType),
   },
   {
-    field: 'url',
+    field: 'path',
     label: '访问路径',
     component: 'Input',
     required: true,
     ifShow: ({ values }) =>
       !(values.component === ComponentTypes.IFrame && values.internalOrExternal),
+  },
+  {
+    field: 'name',
+    label: '路由名称',
+    component: 'Input',
+    required: true,
+    ifShow: ({ values }) => !isButton(values.menuType),
   },
   {
     field: 'component',
@@ -206,44 +227,31 @@ export const formSchema: FormSchema[] = [
     ifShow: ({ values }) => isButton(values.menuType),
   },
   {
-    field: 'status',
-    label: '状态',
-    component: 'RadioGroup',
-    defaultValue: '1',
-    componentProps: {
-      options: [
-        { label: '有效', value: '1' },
-        { label: '无效', value: '0' },
-      ],
-    },
-    ifShow: ({ values }) => isButton(values.menuType),
-  },
-  {
     field: 'icon',
     label: '菜单图标',
     component: 'IconPicker',
     ifShow: ({ values }) => !isButton(values.menuType),
   },
   {
-    field: 'sequence',
+    field: 'orderNo',
     label: '排序',
     component: 'InputNumber',
     defaultValue: 1,
     ifShow: ({ values }) => !isButton(values.menuType),
   },
   {
-    field: 'route',
-    label: '是否路由菜单',
+    field: 'hideChildrenInMenu',
+    label: '隐藏子路由',
     component: 'Switch',
-    defaultValue: true,
+    defaultValue: 0,
     componentProps: {
       checkedChildren: '是',
       unCheckedChildren: '否',
     },
-    ifShow: ({ values }) => !isButton(values.menuType),
+    ifShow: ({ values }) => isDir(values.menuType),
   },
   {
-    field: 'hidden',
+    field: 'hideMenu',
     label: '隐藏路由',
     component: 'Switch',
     defaultValue: 0,
@@ -255,7 +263,7 @@ export const formSchema: FormSchema[] = [
   },
   {
     field: 'hideTab',
-    label: '隐藏Tab',
+    label: '在Tab中隐藏',
     component: 'Switch',
     defaultValue: 0,
     componentProps: {
@@ -265,7 +273,18 @@ export const formSchema: FormSchema[] = [
     ifShow: ({ values }) => !isButton(values.menuType),
   },
   {
-    field: 'keepAlive',
+    field: 'hideBreadcrumb',
+    label: '隐藏导航',
+    component: 'Switch',
+    defaultValue: 0,
+    componentProps: {
+      checkedChildren: '是',
+      unCheckedChildren: '否',
+    },
+    ifShow: ({ values }) => !isButton(values.menuType),
+  },
+  {
+    field: 'ignoreKeepAlive',
     label: '是否缓存路由',
     component: 'Switch',
     defaultValue: false,
@@ -276,10 +295,10 @@ export const formSchema: FormSchema[] = [
     ifShow: ({ values }) => !isButton(values.menuType),
   },
   {
-    field: 'alwaysShow',
-    label: '聚合路由',
+    field: 'ignoreRoute',
+    label: '忽略路由',
     component: 'Switch',
-    defaultValue: false,
+    defaultValue: true,
     componentProps: {
       checkedChildren: '是',
       unCheckedChildren: '否',

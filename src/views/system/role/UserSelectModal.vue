@@ -14,7 +14,7 @@
   import { BasicModal, useModalInner } from '/@/components/Modal';
   import { BasicTable, useTable } from '/@/components/Table';
   import { userColumns, searchUserFormSchema } from './roleForm';
-  import { getUserListByRole } from '/@/api/system/user';
+  import { getUserListByRole } from '/@/api/system/role';
   // 声明Emits
   const emit = defineEmits(['select', 'register']);
   const checkedKeys = ref<Array<string | number>>([]);

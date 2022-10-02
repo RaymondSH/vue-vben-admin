@@ -120,7 +120,7 @@ function promoteRouteLevel(routeModule: AppRouteModule) {
   // 使用vue-router拼接菜单
   // createRouter 创建一个可以被 Vue 应用程序使用的路由实例
   let router: Router | null = createRouter({
-    routes: [routeModule as unknown as RouteRecordNormalized],
+    routes: [routeModule as unknown as AppRouteModule],
     history: createWebHashHistory(),
   });
   // getRoutes： 获取所有 路由记录的完整列表。

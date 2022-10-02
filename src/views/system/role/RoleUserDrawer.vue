@@ -33,7 +33,7 @@
   import { useModal } from '/@/components/Modal';
   import UserSelectModal from './UserSelectModal.vue';
   import {
-    getUserListByRole,
+    getRoleUserList,
     deleteUserRole,
     batchDeleteUserRole,
     addUserRole,
@@ -51,7 +51,7 @@
   const [userSelectModal, { openModal }] = useModal();
   const [registerTable, { reload, setProps }] = useTable({
     title: '用户列表',
-    api: getUserListByRole,
+    api: getRoleUserList,
     columns: userColumns,
     formConfig: {
       labelWidth: 120,

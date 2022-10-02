@@ -42,8 +42,12 @@
     <UserDrawer @register="userDrawer" @success="handleSuccess" />
   </div>
 </template>
-
-<script lang="ts" name="system-user" setup>
+<script lang="ts">
+  export default {
+    name: 'SystemUser',
+  };
+</script>
+<script lang="ts" setup>
   //ts语法
   import { BasicTable, TableAction, ActionItem } from '/@/components/Table';
   import UserDrawer from './UserDrawer.vue';
