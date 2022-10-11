@@ -132,7 +132,7 @@ export const formSchema: FormSchema[] = [
   },
   {
     label: '所属部门',
-    field: 'selectedDeparts',
+    field: 'departId',
     component: 'ApiTreeSelect',
     componentProps: {
       api: listAllDepart,

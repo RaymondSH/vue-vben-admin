@@ -15,6 +15,7 @@
   import { BasicForm, useForm } from '/@/components/Form/index';
   import { formSchema } from './userForm';
   import { BasicDrawer, useDrawerInner } from '/@/components/Drawer';
+  import { saveOrUpdateUser } from '/@/api/system/user';
   // 声明Emits
   const emit = defineEmits(['success', 'register']);
   const isUpdate = ref(true);
@@ -112,7 +113,7 @@
       setDrawerProps({ confirmLoading: true });
       values.userIdentity === 1 && (values.departIds = '');
       //提交表单
-      // await saveOrUpdateUser(values, unref(isUpdate));
+      await saveOrUpdateUser(values, unref(isUpdate));
       //关闭弹窗
       closeDrawer();
       //刷新列表

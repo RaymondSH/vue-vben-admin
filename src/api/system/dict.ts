@@ -6,7 +6,7 @@ enum Api {
   duplicateCheck = '/sys/duplicate/check',
   dictItemCheck = '/sys/dictItem/dictItemCheck',
   list = '/sys/dict/list',
-  add = '/sys/dict/add',
+  save = '/sys/dict/add',
   edit = '/sys/dict/edit',
   getDictItems = '/sys/dict/getDictItem',
   deleteDict = '/sys/dict/delete',
@@ -50,7 +50,7 @@ export function saveOrUpdateDict(params, isUpdate: Boolean) {
   if (isUpdate) {
     return defHttp.put({ url: Api.edit, params });
   } else {
-    return defHttp.post({ url: Api.add, params });
+    return defHttp.post({ url: Api.save, params });
   }
 }
 
