@@ -73,8 +73,9 @@ interface HttpResponse<T = any> {
    * 0 means success, others means fail
    */
   code: number;
-  data: T;
   message: string;
+  result: T;
+  success: boolean;
 }
 
 export type {

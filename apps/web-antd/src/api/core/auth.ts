@@ -1,4 +1,4 @@
-import { baseRequestClient, requestClient } from '#/api/request';
+import { requestClient } from '#/api/request';
 
 export namespace AuthApi {
   /** 登录接口参数 */
@@ -12,9 +12,12 @@ export namespace AuthApi {
     accessToken: string;
   }
 
-  export interface RefreshTokenResult {
-    data: string;
-    status: number;
+  export interface AuthStatus {
+    authEnabled: boolean;
+    loggedIn: boolean;
+    passwordChangeable: boolean;
+    passwordSet: boolean;
+    setupState: 'enabled' | 'no_password' | 'password_retained';
   }
 }
 
@@ -22,30 +25,38 @@ export namespace AuthApi {
  * 登录
  */
 export async function loginApi(data: AuthApi.LoginParams) {
-  return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
+  await requestClient.post<{ ok: boolean }>('/auth/login', data);
+  return {
+    accessToken: 'cookie-session',
+  };
 }
 
 /**
  * 刷新accessToken
  */
 export async function refreshTokenApi() {
-  return baseRequestClient.post<AuthApi.RefreshTokenResult>('/auth/refresh', {
-    withCredentials: true,
-  });
+  const status = await getAuthStatusApi();
+  return status.loggedIn ? 'cookie-session' : '';
 }
 
 /**
  * 退出登录
  */
 export async function logoutApi() {
-  return baseRequestClient.post('/auth/logout', {
-    withCredentials: true,
-  });
+  return requestClient.post<{ ok: boolean }>('/auth/logout');
 }
 
 /**
  * 获取用户权限码
  */
 export async function getAccessCodesApi() {
-  return requestClient.get<string[]>('/auth/codes');
+  const status = await getAuthStatusApi();
+  return status.loggedIn || !status.authEnabled ? ['admin'] : [];
+}
+
+/**
+ * 获取认证状态
+ */
+export async function getAuthStatusApi() {
+  return requestClient.get<AuthApi.AuthStatus>('/auth/status');
 }
