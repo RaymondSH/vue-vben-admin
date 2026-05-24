@@ -1,20 +1,28 @@
 import type { UserInfo } from '@vben/types';
 
-import { getAuthStatusApi } from './auth';
+import { requestClient } from '#/api/request';
+
+interface BackendUser {
+  id: number;
+  isActive: boolean;
+  mustChangePassword: boolean;
+  role: string;
+  username: string;
+}
 
 /**
  * 获取用户信息
  */
 export async function getUserInfoApi() {
-  const status = await getAuthStatusApi();
+  const user = await requestClient.get<BackendUser>('/auth/me');
   return {
     avatar: '',
-    desc: status.authEnabled ? 'Daily Stock Analysis admin' : 'Local admin',
+    desc: 'Daily Stock Analysis admin',
     homePath: '/analytics',
-    realName: 'Admin',
-    roles: ['admin'],
-    token: 'cookie-session',
-    userId: 'admin',
-    username: 'admin',
+    realName: user.username,
+    roles: [user.role],
+    token: '',
+    userId: String(user.id),
+    username: user.username,
   } satisfies UserInfo;
 }

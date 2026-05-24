@@ -1,3 +1,5 @@
+import { useAccessStore } from '@vben/stores';
+
 import { requestClient } from '#/api/request';
 
 export namespace AuthApi {
@@ -10,6 +12,19 @@ export namespace AuthApi {
   /** 登录接口返回值 */
   export interface LoginResult {
     accessToken: string;
+    refreshToken: string;
+    user: {
+      id: number;
+      isActive: boolean;
+      mustChangePassword: boolean;
+      role: string;
+      username: string;
+    };
+  }
+
+  export interface RefreshTokenResult {
+    accessToken: string;
+    refreshToken: string;
   }
 
   export interface AuthStatus {
@@ -25,18 +40,25 @@ export namespace AuthApi {
  * 登录
  */
 export async function loginApi(data: AuthApi.LoginParams) {
-  await requestClient.post<{ ok: boolean }>('/auth/login', data);
-  return {
-    accessToken: 'cookie-session',
-  };
+  return requestClient.post<AuthApi.LoginResult>('/auth/login', data);
 }
 
 /**
  * 刷新accessToken
  */
 export async function refreshTokenApi() {
-  const status = await getAuthStatusApi();
-  return status.loggedIn ? 'cookie-session' : '';
+  const accessStore = useAccessStore();
+  if (!accessStore.refreshToken) {
+    return '';
+  }
+  const result = await requestClient.post<AuthApi.RefreshTokenResult>(
+    '/auth/refresh',
+    {
+      refreshToken: accessStore.refreshToken,
+    },
+  );
+  accessStore.setRefreshToken(result.refreshToken);
+  return result.accessToken;
 }
 
 /**
