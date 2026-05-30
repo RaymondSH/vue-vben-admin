@@ -18,7 +18,7 @@ export async function getUserInfoApi() {
   return {
     avatar: '',
     desc: 'Daily Stock Analysis admin',
-    homePath: '/analytics',
+    homePath: '/workspace',
     realName: user.username,
     roles: [user.role],
     token: '',
