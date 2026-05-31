@@ -243,10 +243,12 @@ async function loadPerformance() {
   }
 }
 
-async function refreshPage(page = filters.page) {
+async function refreshPage(page = filters.page, includePerformance = true) {
   errorMessage.value = '';
   try {
-    await Promise.all([loadResults(page), loadPerformance()]);
+    await (includePerformance
+      ? Promise.all([loadResults(page), loadPerformance()])
+      : loadResults(page));
   } catch (error) {
     errorMessage.value =
       error instanceof Error ? error.message : '回测数据加载失败。';
@@ -307,7 +309,7 @@ function hydrateFromRouteQuery() {
 
 onMounted(async () => {
   hydrateFromRouteQuery();
-  await refreshPage(1);
+  await refreshPage(1, false);
 });
 </script>
 

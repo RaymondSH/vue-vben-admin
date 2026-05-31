@@ -522,178 +522,184 @@ onBeforeUnmount(() => {
             新对话
           </Button>
         </div>
-        <Spin :spinning="sessionsLoading">
-          <List :data-source="sessions" size="small">
-            <template #renderItem="{ item }">
-              <ListItem>
-                <div
-                  class="session-item"
-                  :class="{ active: item.sessionId === sessionId }"
-                >
-                  <button type="button" @click="switchSession(item.sessionId)">
-                    <strong>{{ item.title }}</strong>
-                    <span>
-                      {{ item.messageCount }} 条 ·
-                      {{ formatDateTime(item.lastActive) || '刚刚' }}
-                    </span>
-                  </button>
-                  <Button
-                    danger
-                    size="small"
-                    type="text"
-                    @click="confirmDeleteSession(item)"
+        <div class="sidebar-content">
+          <Spin :spinning="sessionsLoading">
+            <List :data-source="sessions" size="small">
+              <template #renderItem="{ item }">
+                <ListItem>
+                  <div
+                    class="session-item"
+                    :class="{ active: item.sessionId === sessionId }"
                   >
-                    删除
-                  </Button>
-                </div>
-              </ListItem>
-            </template>
-          </List>
-          <Empty
-            v-if="!sessionsLoading && sessions.length === 0"
-            description="暂无对话"
-          />
-        </Spin>
+                    <button type="button" @click="switchSession(item.sessionId)">
+                      <strong>{{ item.title }}</strong>
+                      <span>
+                        {{ item.messageCount }} 条 ·
+                        {{ formatDateTime(item.lastActive) || '刚刚' }}
+                      </span>
+                    </button>
+                    <Button
+                      danger
+                      size="small"
+                      type="text"
+                      @click="confirmDeleteSession(item)"
+                    >
+                      删除
+                    </Button>
+                  </div>
+                </ListItem>
+              </template>
+            </List>
+            <Empty
+              v-if="!sessionsLoading && sessions.length === 0"
+              description="暂无对话"
+            />
+          </Spin>
+        </div>
       </aside>
 
       <main class="chat-main">
         <Card class="chat-card" :body-style="{ padding: 0 }">
-          <div ref="messagesRef" class="message-list">
-            <Spin :spinning="messagesLoading">
-              <Empty
-                v-if="messages.length === 0 && !messagesLoading"
-                description="输入股票代码、名称或问题，开始问股"
-              />
-              <div
-                v-for="item in messages"
-                :key="item.id"
-                class="message-row"
-                :class="item.role"
-              >
-                <div class="message-bubble">
-                  <div class="message-meta">
-                    <strong>{{ roleLabel(item.role) }}</strong>
-                    <span>{{ formatDateTime(item.createdAt) }}</span>
-                    <Tag v-for="skill in item.skillNames" :key="skill">
-                      {{ skill }}
-                    </Tag>
-                  </div>
-                  <pre>{{ item.content }}</pre>
-                  <div class="message-actions">
-                    <Button
-                      size="small"
-                      type="link"
-                      @click="copyMessage(item.id, item.content)"
-                    >
-                      {{ copiedMessageId === item.id ? '已复制' : '复制' }}
-                    </Button>
-                  </div>
-                  <Collapse
-                    v-if="item.thinkingSteps?.length"
-                    ghost
-                    size="small"
-                    class="thinking-collapse"
-                  >
-                    <Collapse.Panel key="steps" header="思考过程">
-                      <div
-                        v-for="(step, index) in item.thinkingSteps"
-                        :key="`${item.id}-${index}`"
-                        class="progress-step"
+          <div class="chat-card-inner">
+            <div ref="messagesRef" class="message-list">
+              <Spin :spinning="messagesLoading">
+                <Empty
+                  v-if="messages.length === 0 && !messagesLoading"
+                  description="输入股票代码、名称或问题，开始问股"
+                />
+                <div
+                  v-for="item in messages"
+                  :key="item.id"
+                  class="message-row"
+                  :class="item.role"
+                >
+                  <div class="message-bubble">
+                    <div class="message-meta">
+                      <strong>{{ roleLabel(item.role) }}</strong>
+                      <span>{{ formatDateTime(item.createdAt) }}</span>
+                      <Tag v-for="skill in item.skillNames" :key="skill">
+                        {{ skill }}
+                      </Tag>
+                    </div>
+                    <pre>{{ item.content }}</pre>
+                    <div class="message-actions">
+                      <Button
+                        size="small"
+                        type="link"
+                        @click="copyMessage(item.id, item.content)"
                       >
-                        <Tag>{{ step.type }}</Tag>
-                        <span>
-                          {{
-                            step.message ||
-                            step.displayName ||
-                            step.tool ||
-                            step.content ||
-                            '-'
-                          }}
-                        </span>
-                      </div>
-                    </Collapse.Panel>
-                  </Collapse>
+                        {{ copiedMessageId === item.id ? '已复制' : '复制' }}
+                      </Button>
+                    </div>
+                    <Collapse
+                      v-if="item.thinkingSteps?.length"
+                      ghost
+                      size="small"
+                      class="thinking-collapse"
+                    >
+                      <Collapse.Panel key="steps" header="思考过程">
+                        <div
+                          v-for="(step, index) in item.thinkingSteps"
+                          :key="`${item.id}-${index}`"
+                          class="progress-step"
+                        >
+                          <Tag>{{ step.type }}</Tag>
+                          <span>
+                            {{
+                              step.message ||
+                              step.displayName ||
+                              step.tool ||
+                              step.content ||
+                              '-'
+                            }}
+                          </span>
+                        </div>
+                      </Collapse.Panel>
+                    </Collapse>
+                  </div>
+                </div>
+                <div v-if="loading" class="streaming-state">
+                  <Spin size="small" />
+                  <span>{{ currentStage }}</span>
+                </div>
+              </Spin>
+            </div>
+
+            <div class="chat-footer">
+              <Alert
+                v-if="chatError"
+                closable
+                class="chat-error"
+                :message="chatError"
+                type="error"
+                @close="chatError = ''"
+              >
+                <template #action>
+                  <Button
+                    v-if="lastFailedText"
+                    danger
+                    size="small"
+                    @click="retryLastMessage"
+                  >
+                    重试
+                  </Button>
+                </template>
+              </Alert>
+
+              <Alert
+                v-if="interruptedMessage"
+                closable
+                class="chat-error"
+                show-icon
+                type="warning"
+                :message="interruptedMessage"
+                @close="interruptedMessage = ''"
+              />
+
+              <Alert
+                v-if="followUpContext"
+                class="chat-error"
+                show-icon
+                type="info"
+                :message="`已带入${followUpSource || '分析报告'}上下文，下一次发送会基于该报告继续追问。`"
+              />
+
+              <div class="composer">
+                <Textarea
+                  v-model:value="input"
+                  :auto-size="{ minRows: 3, maxRows: 8 }"
+                  :disabled="loading"
+                  placeholder="例如：600519 最近能不能买？或者输入 AAPL 财报后怎么看？"
+                  @keydown="handleKeydown"
+                />
+                <div class="composer-actions">
+                  <Space wrap>
+                    <Button
+                      :disabled="messages.length === 0"
+                      @click="exportSession"
+                    >
+                      导出会话
+                    </Button>
+                    <Button
+                      :disabled="messages.length === 0"
+                      @click="sendCurrentSessionToNotification"
+                    >
+                      发送通知
+                    </Button>
+                    <Button v-if="loading" danger @click="stopStreaming">
+                      停止
+                    </Button>
+                  </Space>
+                  <Button
+                    type="primary"
+                    :disabled="!input.trim() || loading"
+                    :loading="loading"
+                    @click="sendMessage()"
+                  >
+                    发送
+                  </Button>
                 </div>
               </div>
-              <div v-if="loading" class="streaming-state">
-                <Spin size="small" />
-                <span>{{ currentStage }}</span>
-              </div>
-            </Spin>
-          </div>
-
-          <Alert
-            v-if="chatError"
-            closable
-            class="chat-error"
-            :message="chatError"
-            type="error"
-            @close="chatError = ''"
-          >
-            <template #action>
-              <Button
-                v-if="lastFailedText"
-                danger
-                size="small"
-                @click="retryLastMessage"
-              >
-                重试
-              </Button>
-            </template>
-          </Alert>
-
-          <Alert
-            v-if="interruptedMessage"
-            closable
-            class="chat-error"
-            show-icon
-            type="warning"
-            :message="interruptedMessage"
-            @close="interruptedMessage = ''"
-          />
-
-          <Alert
-            v-if="followUpContext"
-            class="chat-error"
-            show-icon
-            type="info"
-            :message="`已带入${followUpSource || '分析报告'}上下文，下一次发送会基于该报告继续追问。`"
-          />
-
-          <div class="composer">
-            <Textarea
-              v-model:value="input"
-              :auto-size="{ minRows: 3, maxRows: 8 }"
-              :disabled="loading"
-              placeholder="例如：600519 最近能不能买？或者输入 AAPL 财报后怎么看？"
-              @keydown="handleKeydown"
-            />
-            <div class="composer-actions">
-              <Space wrap>
-                <Button
-                  :disabled="messages.length === 0"
-                  @click="exportSession"
-                >
-                  导出会话
-                </Button>
-                <Button
-                  :disabled="messages.length === 0"
-                  @click="sendCurrentSessionToNotification"
-                >
-                  发送通知
-                </Button>
-                <Button v-if="loading" danger @click="stopStreaming">
-                  停止
-                </Button>
-              </Space>
-              <Button
-                type="primary"
-                :disabled="!input.trim() || loading"
-                :loading="loading"
-                @click="sendMessage()"
-              >
-                发送
-              </Button>
             </div>
           </div>
         </Card>
@@ -746,7 +752,7 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 300px;
   gap: 16px;
-  height: calc(100vh - 150px);
+  height: calc(90vh - 150px);
   min-height: 680px;
   padding: 16px;
 }
@@ -755,6 +761,14 @@ onBeforeUnmount(() => {
 .chat-main,
 .chat-tools {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.chat-tools {
+  overflow-y: auto;
 }
 
 .chat-sidebar {
@@ -762,6 +776,32 @@ onBeforeUnmount(() => {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
   border-radius: 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.sidebar-content :deep(.ant-spin-container) {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-content :deep(.ant-list) {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.chat-main {
+  height: 100%;
+  min-height: 0;
 }
 
 .sidebar-header {
@@ -811,15 +851,38 @@ onBeforeUnmount(() => {
 
 .chat-card {
   display: flex;
+  flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
 
+.chat-card :deep(.ant-card-body) {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+.chat-card-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+}
+
 .message-list {
-  height: calc(100% - 190px);
-  min-height: 420px;
+  flex: 1;
+  min-height: 0;
   padding: 18px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.chat-footer {
+  flex-shrink: 0;
 }
 
 .message-row {
@@ -887,9 +950,11 @@ onBeforeUnmount(() => {
 
 .chat-error {
   margin: 0 16px 12px;
+  flex-shrink: 0;
 }
 
 .composer {
+  flex-shrink: 0;
   padding: 14px;
   border-top: 1px solid hsl(var(--border));
 }
@@ -940,7 +1005,7 @@ onBeforeUnmount(() => {
   }
 
   .message-list {
-    height: 520px;
+    min-height: 420px;
   }
 }
 </style>

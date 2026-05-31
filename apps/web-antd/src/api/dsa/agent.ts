@@ -5,6 +5,8 @@ import type {
   SkillInfo,
 } from './types';
 
+import { useAccessStore } from '@vben/stores';
+
 import { requestClient } from '#/api/request';
 
 import { getApiStreamBaseUrl, toCamelCase } from './utils';
@@ -46,6 +48,13 @@ export async function chatStreamApi(
   payload: ChatStreamRequest,
   options?: { signal?: AbortSignal },
 ) {
+  const accessStore = useAccessStore();
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+
+  if (accessStore.accessToken) {
+    headers.Authorization = `Bearer ${accessStore.accessToken}`;
+  }
+
   const response = await fetch(`${getApiStreamBaseUrl()}/agent/chat/stream`, {
     body: JSON.stringify({
       context: payload.context,
@@ -54,7 +63,7 @@ export async function chatStreamApi(
       skills: payload.skills,
     }),
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     method: 'POST',
     signal: options?.signal,
   });
