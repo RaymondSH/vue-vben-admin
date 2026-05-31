@@ -4,8 +4,8 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:message-square-quote',
-      order: 0,
-      title: 'Agent 问股',
+      order: 1,
+      title: '问股',
     },
     name: 'Agent',
     path: '/agent',

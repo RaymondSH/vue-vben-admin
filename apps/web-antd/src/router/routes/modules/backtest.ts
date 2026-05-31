@@ -4,8 +4,8 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:activity',
-      order: 2,
-      title: '策略回测',
+      order: 3,
+      title: '回测',
     },
     name: 'Backtest',
     path: '/backtest',

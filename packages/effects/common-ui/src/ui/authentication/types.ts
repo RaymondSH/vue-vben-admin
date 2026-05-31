@@ -1,5 +1,4 @@
 interface AuthenticationProps {
-
   /**
    * @zh_CN 是否处于加载处理状态
    */

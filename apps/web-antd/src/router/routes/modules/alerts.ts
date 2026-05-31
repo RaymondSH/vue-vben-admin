@@ -4,7 +4,7 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:bell-ring',
-      order: 3,
+      order: 4,
       title: '告警中心',
     },
     name: 'Alerts',

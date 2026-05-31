@@ -2,6 +2,7 @@ import type {
   PortfolioAccountCreateRequest,
   PortfolioAccountItem,
   PortfolioAccountListResponse,
+  PortfolioAccountUpdateRequest,
   PortfolioCashLedgerCreateRequest,
   PortfolioCashLedgerListResponse,
   PortfolioCorporateActionCreateRequest,
@@ -89,6 +90,24 @@ export async function createPortfolioAccountApi(
     toSnakeCase({ ...data }),
   );
   return toCamelCase<PortfolioAccountItem>(response);
+}
+
+export async function updatePortfolioAccountApi(
+  accountId: number,
+  data: PortfolioAccountUpdateRequest,
+) {
+  const response = await requestClient.put<unknown>(
+    `/portfolio/accounts/${accountId}`,
+    toSnakeCase({ ...data }),
+  );
+  return toCamelCase<PortfolioAccountItem>(response);
+}
+
+export async function deactivatePortfolioAccountApi(accountId: number) {
+  const response = await requestClient.delete<unknown>(
+    `/portfolio/accounts/${accountId}`,
+  );
+  return toCamelCase<PortfolioDeleteResponse>(response);
 }
 
 export async function getPortfolioSnapshotApi(query: SnapshotQuery = {}) {

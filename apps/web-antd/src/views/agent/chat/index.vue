@@ -1,5 +1,6 @@
 <script lang="ts" setup>
 import type {
+  AnalysisReport,
   ChatProgressStep,
   ChatSessionItem,
   ChatSessionMessage,
@@ -35,6 +36,8 @@ import {
   getAgentSkillsApi,
   getChatSessionMessagesApi,
   getChatSessionsApi,
+  getHistoryDetailApi,
+  parseDsaApiError,
   sendChatToNotificationApi,
 } from '#/api';
 
@@ -65,6 +68,9 @@ const loading = ref(false);
 const sessionsLoading = ref(false);
 const messagesLoading = ref(false);
 const chatError = ref('');
+const lastFailedText = ref('');
+const lastFailedSkillId = ref('');
+const interruptedMessage = ref('');
 const copiedMessageId = ref('');
 const messagesRef = ref<HTMLElement | null>(null);
 const followUpContext = ref<null | Record<string, unknown>>(null);
@@ -141,7 +147,55 @@ function parseInitialContext(value: unknown) {
   }
 }
 
-function hydrateFromRouteQuery() {
+function buildReportFollowUpContext(report: AnalysisReport) {
+  return {
+    report_context_snapshot: report.details?.contextSnapshot,
+    report_meta: report.meta,
+    report_strategy: report.strategy,
+    report_summary: report.summary,
+  };
+}
+
+function legacyStockPrompt(stock: string, name?: string) {
+  return [`${stock}${name ? ` ${name}` : ''}`, '帮我分析后续操作。'].join(' ');
+}
+
+async function hydrateLegacyContext() {
+  const stock =
+    typeof route.query.stock === 'string' ? route.query.stock.trim() : '';
+  const name =
+    typeof route.query.name === 'string' ? route.query.name.trim() : '';
+  const recordId =
+    typeof route.query.recordId === 'string'
+      ? Number(route.query.recordId)
+      : Number.NaN;
+
+  if (Number.isFinite(recordId) && recordId > 0) {
+    try {
+      const report = await getHistoryDetailApi(recordId);
+      followUpContext.value = buildReportFollowUpContext(report);
+      followUpSource.value = [report.meta.stockCode, report.meta.stockName]
+        .filter(Boolean)
+        .join(' ');
+      if (!input.value.trim()) {
+        input.value = legacyStockPrompt(
+          report.meta.stockCode,
+          report.meta.stockName || undefined,
+        );
+      }
+      return;
+    } catch (error) {
+      chatError.value = parseDsaApiError(error, '历史报告上下文加载失败');
+    }
+  }
+
+  if (stock && !input.value.trim()) {
+    input.value = legacyStockPrompt(stock, name || undefined);
+    followUpSource.value = [stock, name].filter(Boolean).join(' ');
+  }
+}
+
+async function hydrateFromRouteQuery() {
   const prompt = route.query.prompt;
   if (typeof prompt === 'string' && prompt.trim()) {
     input.value = prompt;
@@ -162,7 +216,14 @@ function hydrateFromRouteQuery() {
       followUpSource.value = '分析报告';
     }
   }
-  if (prompt || route.query.context) {
+  await hydrateLegacyContext();
+  if (
+    prompt ||
+    route.query.context ||
+    route.query.stock ||
+    route.query.name ||
+    route.query.recordId
+  ) {
     router.replace({ path: route.path, query: {} });
   }
 }
@@ -223,6 +284,7 @@ function startNewChat() {
   messages.value = [];
   progressSteps.value = [];
   chatError.value = '';
+  interruptedMessage.value = '';
   input.value = '';
 }
 
@@ -278,6 +340,9 @@ async function sendMessage(overrideText?: string, overrideSkillId?: string) {
   updateSessionPreview(text);
   input.value = '';
   chatError.value = '';
+  interruptedMessage.value = '';
+  lastFailedText.value = '';
+  lastFailedSkillId.value = '';
   progressSteps.value = [];
   loading.value = true;
   scrollToBottom();
@@ -337,8 +402,13 @@ async function sendMessage(overrideText?: string, overrideSkillId?: string) {
     followUpSource.value = '';
     await loadSessions();
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') return;
-    chatError.value = error instanceof Error ? error.message : '问股请求失败';
+    if (error instanceof Error && error.name === 'AbortError') {
+      interruptedMessage.value = '本次问股已中断，可以修改问题后重新发送。';
+      return;
+    }
+    lastFailedText.value = text;
+    lastFailedSkillId.value = overrideSkillId || '';
+    chatError.value = parseDsaApiError(error, '问股请求失败');
   } finally {
     loading.value = false;
     progressSteps.value = [];
@@ -356,6 +426,12 @@ function handleKeydown(event: KeyboardEvent) {
 
 function stopStreaming() {
   abortController?.abort();
+}
+
+function retryLastMessage() {
+  const text = lastFailedText.value;
+  if (!text) return;
+  sendMessage(text, lastFailedSkillId.value || undefined);
 }
 
 async function copyMessage(messageId: string, content: string) {
@@ -418,7 +494,7 @@ function confirmDeleteSession(targetSession: ChatSessionItem) {
 
 onMounted(async () => {
   persistSessionId(getInitialSessionId());
-  hydrateFromRouteQuery();
+  await hydrateFromRouteQuery();
   await Promise.allSettled([loadSkills(), loadSessions()]);
   const exists = sessions.value.some(
     (item) => item.sessionId === sessionId.value,
@@ -553,6 +629,27 @@ onBeforeUnmount(() => {
             :message="chatError"
             type="error"
             @close="chatError = ''"
+          >
+            <template #action>
+              <Button
+                v-if="lastFailedText"
+                danger
+                size="small"
+                @click="retryLastMessage"
+              >
+                重试
+              </Button>
+            </template>
+          </Alert>
+
+          <Alert
+            v-if="interruptedMessage"
+            closable
+            class="chat-error"
+            show-icon
+            type="warning"
+            :message="interruptedMessage"
+            @close="interruptedMessage = ''"
           />
 
           <Alert

@@ -24,6 +24,7 @@ import {
   Alert,
   Button,
   Card,
+  Drawer,
   Empty,
   Form,
   FormItem,
@@ -46,6 +47,7 @@ import {
   createPortfolioCashLedgerApi,
   createPortfolioCorporateActionApi,
   createPortfolioTradeApi,
+  deactivatePortfolioAccountApi,
   deletePortfolioCashLedgerApi,
   deletePortfolioCorporateActionApi,
   deletePortfolioTradeApi,
@@ -56,8 +58,10 @@ import {
   listPortfolioCorporateActionsApi,
   listPortfolioImportBrokersApi,
   listPortfolioTradesApi,
+  parseDsaApiError,
   parsePortfolioCsvImportApi,
   refreshPortfolioFxApi,
+  updatePortfolioAccountApi,
 } from '#/api';
 
 defineOptions({ name: 'PortfolioOverview' });
@@ -85,6 +89,7 @@ const accountColumns = [
   { dataIndex: 'market', key: 'market', title: '市场' },
   { dataIndex: 'baseCurrency', key: 'baseCurrency', title: '本位币' },
   { dataIndex: 'broker', key: 'broker', title: '券商' },
+  { key: 'action', title: '操作', width: 120 },
 ];
 
 const positionColumns = [
@@ -167,6 +172,8 @@ const csvCommitting = ref(false);
 const csvParseResult = ref<null | PortfolioImportParseResponse>(null);
 const csvCommitResult = ref<null | PortfolioImportCommitResponse>(null);
 const brokerLoadWarning = ref('');
+const accountEditOpen = ref(false);
+const editingAccountId = ref<null | number>(null);
 
 const snapshot = ref<Awaited<
   ReturnType<typeof getPortfolioSnapshotApi>
@@ -176,9 +183,26 @@ const tradeEvents = ref<PortfolioTradeListItem[]>([]);
 const cashEvents = ref<PortfolioCashLedgerListItem[]>([]);
 const corporateEvents = ref<PortfolioCorporateActionListItem[]>([]);
 
+const eventFilters = reactive({
+  actionType: undefined as PortfolioCorporateActionType | undefined,
+  dateFrom: '',
+  dateTo: '',
+  direction: undefined as PortfolioCashDirection | undefined,
+  side: undefined as PortfolioSide | undefined,
+  symbol: '',
+});
+
 const accountForm = reactive({
   baseCurrency: 'CNY',
   broker: '',
+  market: 'cn' as 'cn' | 'hk' | 'us',
+  name: '',
+});
+
+const accountEditForm = reactive({
+  baseCurrency: 'CNY',
+  broker: '',
+  isActive: 'active' as 'active' | 'inactive',
   market: 'cn' as 'cn' | 'hk' | 'us',
   name: '',
 });
@@ -258,6 +282,14 @@ const topPositions = computed(
 );
 const topSectors = computed(
   () => risk.value?.sectorConcentration.topSectors || [],
+);
+
+const maxPositionWeight = computed(() =>
+  Math.max(...topPositions.value.map((item) => item.weightPct), 1),
+);
+
+const maxSectorWeight = computed(() =>
+  Math.max(...topSectors.value.map((item) => item.weightPct), 1),
 );
 
 function getToday() {
@@ -378,16 +410,15 @@ async function loadSnapshotAndRisk() {
       });
     } catch (error) {
       risk.value = null;
-      riskWarning.value =
-        error instanceof Error
-          ? error.message
-          : '风险数据获取失败，已降级展示持仓快照。';
+      riskWarning.value = parseDsaApiError(
+        error,
+        '风险数据获取失败，已降级展示持仓快照。',
+      );
     }
   } catch (error) {
     snapshot.value = null;
     risk.value = null;
-    errorMessage.value =
-      error instanceof Error ? error.message : '持仓快照加载失败。';
+    errorMessage.value = parseDsaApiError(error, '持仓快照加载失败。');
   } finally {
     loading.value = false;
   }
@@ -399,14 +430,21 @@ async function loadEvents(page = eventPage.value) {
     if (selectedEventType.value === 'trade') {
       const response = await listPortfolioTradesApi({
         accountId: queryAccountId.value,
+        dateFrom: eventFilters.dateFrom || undefined,
+        dateTo: eventFilters.dateTo || undefined,
         page,
         pageSize: EVENT_PAGE_SIZE,
+        side: eventFilters.side,
+        symbol: eventFilters.symbol.trim() || undefined,
       });
       tradeEvents.value = response.items || [];
       eventTotal.value = response.total || 0;
     } else if (selectedEventType.value === 'cash') {
       const response = await listPortfolioCashLedgerApi({
         accountId: queryAccountId.value,
+        dateFrom: eventFilters.dateFrom || undefined,
+        dateTo: eventFilters.dateTo || undefined,
+        direction: eventFilters.direction,
         page,
         pageSize: EVENT_PAGE_SIZE,
       });
@@ -414,14 +452,23 @@ async function loadEvents(page = eventPage.value) {
       eventTotal.value = response.total || 0;
     } else {
       const response = await listPortfolioCorporateActionsApi({
+        actionType: eventFilters.actionType,
         accountId: queryAccountId.value,
+        dateFrom: eventFilters.dateFrom || undefined,
+        dateTo: eventFilters.dateTo || undefined,
         page,
         pageSize: EVENT_PAGE_SIZE,
+        symbol: eventFilters.symbol.trim() || undefined,
       });
       corporateEvents.value = response.items || [];
       eventTotal.value = response.total || 0;
     }
-    eventPage.value = page;
+    const maxPage = Math.ceil(eventTotal.value / EVENT_PAGE_SIZE) || 1;
+    if (page > maxPage && eventTotal.value > 0) {
+      await loadEvents(maxPage);
+      return;
+    }
+    eventPage.value = Math.max(1, Math.min(page, maxPage));
   } finally {
     eventLoading.value = false;
   }
@@ -454,9 +501,68 @@ async function handleAccountCreate() {
     accountForm.broker = '';
     message.success('账户已创建。');
     await refreshAll(1);
+  } catch (error) {
+    handleSubmitError(error, '账户创建失败。');
   } finally {
     submitting.value = false;
   }
+}
+
+function openAccountEdit(account: PortfolioAccountItem) {
+  editingAccountId.value = account.id;
+  accountEditForm.baseCurrency = account.baseCurrency;
+  accountEditForm.broker = account.broker || '';
+  accountEditForm.isActive = account.isActive ? 'active' : 'inactive';
+  accountEditForm.market = account.market;
+  accountEditForm.name = account.name;
+  accountEditOpen.value = true;
+}
+
+function openAccountEditRecord(record: Record<string, unknown>) {
+  openAccountEdit(record as unknown as PortfolioAccountItem);
+}
+
+async function handleAccountUpdate() {
+  if (!editingAccountId.value) return;
+  if (!accountEditForm.name.trim()) {
+    message.warning('账户名称不能为空。');
+    return;
+  }
+  submitting.value = true;
+  try {
+    await updatePortfolioAccountApi(editingAccountId.value, {
+      baseCurrency: accountEditForm.baseCurrency.trim() || 'CNY',
+      broker: accountEditForm.broker.trim() || null,
+      isActive: accountEditForm.isActive === 'active',
+      market: accountEditForm.market,
+      name: accountEditForm.name.trim(),
+    });
+    message.success('账户已更新。');
+    accountEditOpen.value = false;
+    await refreshAll(1);
+  } catch (error) {
+    message.error(parseDsaApiError(error, '账户更新失败。'));
+  } finally {
+    submitting.value = false;
+  }
+}
+
+function confirmDeactivateAccount(account: PortfolioAccountItem) {
+  Modal.confirm({
+    content: `停用后该账户不会参与持仓快照和风险计算，确认停用「${account.name}」吗？`,
+    okText: '停用',
+    okType: 'danger',
+    title: '停用账户',
+    async onOk() {
+      await deactivatePortfolioAccountApi(account.id);
+      message.success('账户已停用。');
+      await refreshAll(1);
+    },
+  });
+}
+
+function confirmDeactivateAccountRecord(record: Record<string, unknown>) {
+  confirmDeactivateAccount(record as unknown as PortfolioAccountItem);
 }
 
 async function handleTradeSubmit() {
@@ -484,9 +590,15 @@ async function handleTradeSubmit() {
     tradeForm.note = '';
     message.success('交易流水已保存。');
     await refreshAll(1);
+  } catch (error) {
+    handleSubmitError(error, '交易流水保存失败。');
   } finally {
     submitting.value = false;
   }
+}
+
+function handleSubmitError(error: unknown, fallback: string) {
+  message.error(parseDsaApiError(error, fallback));
 }
 
 async function handleCashSubmit() {
@@ -510,6 +622,8 @@ async function handleCashSubmit() {
     cashForm.note = '';
     message.success('资金流水已保存。');
     await refreshAll(1);
+  } catch (error) {
+    handleSubmitError(error, '资金流水保存失败。');
   } finally {
     submitting.value = false;
   }
@@ -538,6 +652,8 @@ async function handleCorporateSubmit() {
     corporateForm.note = '';
     message.success('公司行为已保存。');
     await refreshAll(1);
+  } catch (error) {
+    handleSubmitError(error, '公司行为保存失败。');
   } finally {
     submitting.value = false;
   }
@@ -577,6 +693,8 @@ async function handleParseCsv() {
       csvFile.value,
     );
     csvCommitResult.value = null;
+  } catch (error) {
+    handleSubmitError(error, 'CSV 解析失败。');
   } finally {
     csvParsing.value = false;
   }
@@ -601,6 +719,8 @@ async function handleCommitCsv() {
     if (!csvDryRun.value) {
       await refreshAll(1);
     }
+  } catch (error) {
+    handleSubmitError(error, 'CSV 导入失败。');
   } finally {
     csvCommitting.value = false;
   }
@@ -658,6 +778,21 @@ async function handleScopeChange() {
 async function handleEventTypeChange() {
   eventPage.value = 1;
   await loadEvents(1);
+}
+
+async function handleEventFilter() {
+  eventPage.value = 1;
+  await loadEvents(1);
+}
+
+async function resetEventFilter() {
+  eventFilters.actionType = undefined;
+  eventFilters.dateFrom = '';
+  eventFilters.dateTo = '';
+  eventFilters.direction = undefined;
+  eventFilters.side = undefined;
+  eventFilters.symbol = '';
+  await handleEventFilter();
 }
 
 onMounted(async () => {
@@ -806,7 +941,29 @@ onMounted(async () => {
             :pagination="false"
             row-key="id"
             size="small"
-          />
+          >
+            <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'action'">
+                <Space>
+                  <Button
+                    size="small"
+                    type="link"
+                    @click="openAccountEditRecord(record)"
+                  >
+                    编辑
+                  </Button>
+                  <Button
+                    danger
+                    size="small"
+                    type="link"
+                    @click="confirmDeactivateAccountRecord(record)"
+                  >
+                    停用
+                  </Button>
+                </Space>
+              </template>
+            </template>
+          </Table>
         </Card>
 
         <Card title="风险摘要" :bordered="false">
@@ -839,6 +996,22 @@ onMounted(async () => {
               </Tag>
             </div>
           </div>
+          <div class="bar-list" v-if="topPositions.length > 0">
+            <div
+              v-for="item in topPositions.slice(0, 6)"
+              :key="`bar-${item.symbol}`"
+            >
+              <span>{{ item.symbol }}</span>
+              <div>
+                <i
+                  :style="{
+                    width: `${Math.max(4, (item.weightPct / maxPositionWeight) * 100)}%`,
+                  }"
+                ></i>
+              </div>
+              <strong>{{ formatPct(item.weightPct) }}</strong>
+            </div>
+          </div>
 
           <div class="risk-list" v-if="topSectors.length > 0">
             <h4>行业分布</h4>
@@ -847,6 +1020,22 @@ onMounted(async () => {
               <Tag :color="item.isAlert ? 'error' : 'green'">
                 {{ formatPct(item.weightPct) }}
               </Tag>
+            </div>
+          </div>
+          <div class="bar-list sector" v-if="topSectors.length > 0">
+            <div
+              v-for="item in topSectors.slice(0, 6)"
+              :key="`sector-${item.sector}`"
+            >
+              <span>{{ item.sector }}</span>
+              <div>
+                <i
+                  :style="{
+                    width: `${Math.max(4, (item.weightPct / maxSectorWeight) * 100)}%`,
+                  }"
+                ></i>
+              </div>
+              <strong>{{ formatPct(item.weightPct) }}</strong>
             </div>
           </div>
         </Card>
@@ -1191,11 +1380,12 @@ onMounted(async () => {
           v-if="csvParseResult?.errors.length || csvCommitResult?.errors.length"
           class="csv-errors"
         >
+          <strong>错误明细</strong>
           <div
             v-for="item in [
               ...(csvParseResult?.errors || []),
               ...(csvCommitResult?.errors || []),
-            ].slice(0, 6)"
+            ]"
             :key="item"
           >
             {{ item }}
@@ -1204,6 +1394,63 @@ onMounted(async () => {
       </Card>
 
       <Card title="流水记录" :bordered="false">
+        <div class="event-filter">
+          <Input
+            v-model:value="eventFilters.dateFrom"
+            class="filter-date"
+            type="date"
+            placeholder="开始日期"
+          />
+          <Input
+            v-model:value="eventFilters.dateTo"
+            class="filter-date"
+            type="date"
+            placeholder="结束日期"
+          />
+          <Input
+            v-if="selectedEventType !== 'cash'"
+            v-model:value="eventFilters.symbol"
+            allow-clear
+            class="filter-symbol"
+            placeholder="代码"
+            @press-enter="handleEventFilter"
+          />
+          <Select
+            v-if="selectedEventType === 'trade'"
+            v-model:value="eventFilters.side"
+            allow-clear
+            class="filter-select"
+            placeholder="方向"
+            :options="[
+              { label: '买入', value: 'buy' },
+              { label: '卖出', value: 'sell' },
+            ]"
+          />
+          <Select
+            v-if="selectedEventType === 'cash'"
+            v-model:value="eventFilters.direction"
+            allow-clear
+            class="filter-select"
+            placeholder="资金方向"
+            :options="[
+              { label: '流入', value: 'in' },
+              { label: '流出', value: 'out' },
+            ]"
+          />
+          <Select
+            v-if="selectedEventType === 'corporate'"
+            v-model:value="eventFilters.actionType"
+            allow-clear
+            class="filter-select"
+            placeholder="公司行为"
+            :options="[
+              { label: '现金分红', value: 'cash_dividend' },
+              { label: '拆并股调整', value: 'split_adjustment' },
+            ]"
+          />
+          <Button @click="handleEventFilter">筛选</Button>
+          <Button @click="resetEventFilter">重置</Button>
+        </div>
         <Table
           v-if="selectedEventType === 'trade'"
           :columns="tradeColumns"
@@ -1316,6 +1563,55 @@ onMounted(async () => {
         </div>
       </Card>
     </div>
+
+    <Drawer
+      v-model:open="accountEditOpen"
+      destroy-on-close
+      placement="right"
+      title="编辑账户"
+      width="420"
+    >
+      <Form layout="vertical">
+        <FormItem label="账户名称">
+          <Input v-model:value="accountEditForm.name" />
+        </FormItem>
+        <FormItem label="市场">
+          <Select
+            v-model:value="accountEditForm.market"
+            :options="[
+              { label: 'A 股', value: 'cn' },
+              { label: '港股', value: 'hk' },
+              { label: '美股', value: 'us' },
+            ]"
+          />
+        </FormItem>
+        <FormItem label="本位币">
+          <Input v-model:value="accountEditForm.baseCurrency" />
+        </FormItem>
+        <FormItem label="券商">
+          <Input v-model:value="accountEditForm.broker" />
+        </FormItem>
+        <FormItem label="状态">
+          <Select
+            v-model:value="accountEditForm.isActive"
+            :options="[
+              { label: '启用', value: 'active' },
+              { label: '停用', value: 'inactive' },
+            ]"
+          />
+        </FormItem>
+        <Space>
+          <Button
+            :loading="submitting"
+            type="primary"
+            @click="handleAccountUpdate"
+          >
+            保存
+          </Button>
+          <Button @click="accountEditOpen = false">取消</Button>
+        </Space>
+      </Form>
+    </Drawer>
   </Page>
 </template>
 
@@ -1386,6 +1682,23 @@ onMounted(async () => {
   margin-top: 12px;
   font-size: 12px;
   color: #cf1322;
+}
+
+.event-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.filter-date,
+.filter-select {
+  width: 150px;
+}
+
+.filter-symbol {
+  width: 180px;
 }
 
 .dry-run,
@@ -1468,6 +1781,36 @@ onMounted(async () => {
   justify-content: space-between;
 }
 
+.bar-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bar-list div {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 64px;
+  gap: 8px;
+  align-items: center;
+}
+
+.bar-list div div {
+  height: 8px;
+  overflow: hidden;
+  background: hsl(var(--muted));
+  border-radius: 999px;
+}
+
+.bar-list i {
+  display: block;
+  height: 100%;
+  background: #1677ff;
+}
+
+.bar-list.sector i {
+  background: #52c41a;
+}
+
 .positive {
   color: #1677ff;
 }
@@ -1499,6 +1842,9 @@ onMounted(async () => {
   }
 
   .account-select,
+  .filter-date,
+  .filter-select,
+  .filter-symbol,
   .method-select {
     width: 100%;
   }

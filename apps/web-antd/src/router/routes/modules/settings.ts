@@ -4,8 +4,8 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:settings',
-      order: 4,
-      title: '系统设置',
+      order: 5,
+      title: '设置',
     },
     name: 'Settings',
     path: '/settings',

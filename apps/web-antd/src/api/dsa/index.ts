@@ -2,6 +2,7 @@ export * from './agent';
 export * from './alerts';
 export * from './analysis';
 export * from './backtest';
+export * from './errors';
 export * from './history';
 export * from './portfolio';
 export * from './stocks';

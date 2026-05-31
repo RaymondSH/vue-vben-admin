@@ -86,8 +86,12 @@ function calcZIndex() {
     >
       <VbenAvatar :src="avatarSrc" class="mx-auto mb-6 size-20" />
       <div class="mb-4">
-        <h2 class="text-2xl font-semibold">{{ $t('authentication.loginAgainTitle') }}</h2>
-        <p class="text-muted-foreground mt-1">{{ $t('authentication.loginAgainSubTitle') }}</p>
+        <h2 class="text-2xl font-semibold">
+          {{ $t('authentication.loginAgainTitle') }}
+        </h2>
+        <p class="text-muted-foreground mt-1">
+          {{ $t('authentication.loginAgainSubTitle') }}
+        </p>
       </div>
       <slot> </slot>
     </Modal>

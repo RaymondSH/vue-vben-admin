@@ -245,6 +245,15 @@ export interface PortfolioAccountCreateRequest {
   ownerId?: string;
 }
 
+export interface PortfolioAccountUpdateRequest {
+  baseCurrency?: string;
+  broker?: null | string;
+  isActive?: boolean;
+  market?: PortfolioMarket;
+  name?: string;
+  ownerId?: null | string;
+}
+
 export interface PortfolioPositionItem {
   avgCost: number;
   currency: string;

@@ -4,8 +4,8 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:briefcase-business',
-      order: 1,
-      title: '持仓管理',
+      order: 2,
+      title: '持仓',
     },
     name: 'Portfolio',
     path: '/portfolio',

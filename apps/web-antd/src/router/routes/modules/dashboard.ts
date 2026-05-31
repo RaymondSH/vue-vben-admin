@@ -4,8 +4,8 @@ const routes: RouteRecordRaw[] = [
   {
     meta: {
       icon: 'lucide:chart-candlestick',
-      order: -1,
-      title: '投研工作台',
+      order: 0,
+      title: '分析工作台',
     },
     name: 'Dashboard',
     path: '/dashboard',
@@ -17,7 +17,7 @@ const routes: RouteRecordRaw[] = [
         meta: {
           affixTab: true,
           icon: 'lucide:layout-dashboard',
-          title: '分析工作台',
+          title: '工作台',
         },
       },
     ],

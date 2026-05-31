@@ -26,6 +26,7 @@ import {
   Statistic,
   Table,
   Tag,
+  Tooltip,
 } from 'ant-design-vue';
 
 import {
@@ -47,7 +48,12 @@ const resultColumns = [
     title: '分析日期',
     width: 120,
   },
-  { dataIndex: 'trendPrediction', key: 'prediction', title: 'AI 预测' },
+  {
+    dataIndex: 'trendPrediction',
+    key: 'prediction',
+    title: 'AI 预测',
+    width: 220,
+  },
   {
     dataIndex: 'actualReturnPct',
     key: 'actual',
@@ -121,6 +127,13 @@ function statusTone(status: string) {
     return 'warning';
   }
   return 'default';
+}
+
+function statusIcon(status: string) {
+  if (status === 'completed') return '✓';
+  if (status === 'error') return '!';
+  if (status === 'insufficient' || status === 'insufficient_data') return '…';
+  return '?';
 }
 
 function statusLabel(status: string) {
@@ -237,6 +250,8 @@ async function refreshPage(page = filters.page) {
   } catch (error) {
     errorMessage.value =
       error instanceof Error ? error.message : '回测数据加载失败。';
+    results.value = [];
+    total.value = 0;
   }
 }
 
@@ -308,6 +323,12 @@ onMounted(async () => {
         show-icon
         type="error"
         :message="errorMessage"
+      />
+      <Alert
+        v-else-if="!loadingResults && results.length === 0"
+        show-icon
+        type="info"
+        message="当前筛选条件下暂无回测结果，可调整日期/窗口或先运行回测。"
       />
 
       <Card :bordered="false">
@@ -528,10 +549,17 @@ onMounted(async () => {
               </div>
             </template>
             <template v-else-if="column.key === 'prediction'">
-              <div class="prediction-cell">
-                <strong>{{ record.trendPrediction || '-' }}</strong>
-                <span>{{ record.operationAdvice || '-' }}</span>
-              </div>
+              <Tooltip>
+                <template #title>
+                  <div>预测：{{ record.trendPrediction || '-' }}</div>
+                  <div>建议：{{ record.operationAdvice || '-' }}</div>
+                  <div>仓位：{{ record.positionRecommendation || '-' }}</div>
+                </template>
+                <div class="prediction-cell">
+                  <strong>{{ record.trendPrediction || '-' }}</strong>
+                  <span>{{ record.operationAdvice || '-' }}</span>
+                </div>
+              </Tooltip>
             </template>
             <template v-else-if="column.key === 'actual'">
               <Space>
@@ -575,6 +603,7 @@ onMounted(async () => {
             </template>
             <template v-else-if="column.key === 'status'">
               <Tag :color="statusTone(record.evalStatus)">
+                {{ statusIcon(record.evalStatus) }}
                 {{ statusLabel(record.evalStatus) }}
               </Tag>
             </template>
