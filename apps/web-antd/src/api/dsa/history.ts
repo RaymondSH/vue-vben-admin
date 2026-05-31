@@ -1,4 +1,8 @@
-import type { AnalysisReport, HistoryListResponse } from './types';
+import type {
+  AnalysisReport,
+  HistoryListResponse,
+  NewsIntelResponse,
+} from './types';
 
 import { requestClient } from '#/api/request';
 
@@ -37,6 +41,16 @@ export async function getHistoryMarkdownApi(recordId: number) {
     `/history/${recordId}/markdown`,
   );
   return response.content;
+}
+
+export async function getHistoryNewsApi(recordId: number, limit = 20) {
+  const response = await requestClient.get<unknown>(
+    `/history/${recordId}/news`,
+    {
+      params: { limit },
+    },
+  );
+  return toCamelCase<NewsIntelResponse>(response);
 }
 
 export async function deleteHistoryRecordsApi(recordIds: number[]) {

@@ -57,10 +57,13 @@ export interface ReportStrategy {
 
 export interface ReportDetails {
   analysisContextPackOverview?: null | Record<string, unknown>;
+  belongBoards?: null | unknown;
   contextSnapshot?: null | Record<string, unknown>;
+  dividendMetrics?: null | unknown;
   financialReport?: null | Record<string, unknown>;
   newsContent?: string;
   rawResult?: Record<string, unknown>;
+  sectorRankings?: null | unknown;
 }
 
 export interface AnalysisReport {
@@ -154,6 +157,17 @@ export interface HistoryListResponse {
   items: HistoryItem[];
   limit: number;
   page: number;
+  total: number;
+}
+
+export interface NewsIntelItem {
+  snippet: string;
+  title: string;
+  url: string;
+}
+
+export interface NewsIntelResponse {
+  items: NewsIntelItem[];
   total: number;
 }
 
@@ -749,6 +763,53 @@ export interface AlertNotificationListResponse {
   pageSize: number;
   total: number;
 }
+
+export type ImportConfidence = 'high' | 'low' | 'medium';
+
+export type StockIndexMarket = 'BSE' | 'CN' | 'ETF' | 'HK' | 'INDEX' | 'US';
+
+export type StockIndexAssetType = 'etf' | 'index' | 'stock';
+
+export interface StockImportItem {
+  code?: null | string;
+  confidence: ImportConfidence | string;
+  name?: null | string;
+}
+
+export interface StockImportResponse {
+  codes: string[];
+  items: StockImportItem[];
+  rawText?: null | string;
+}
+
+export interface StockIndexItem {
+  active: boolean;
+  aliases?: string[];
+  assetType: StockIndexAssetType;
+  canonicalCode: string;
+  displayCode: string;
+  market: StockIndexMarket;
+  nameEn?: string;
+  nameZh: string;
+  pinyinAbbr?: string;
+  pinyinFull?: string;
+  popularity?: number;
+}
+
+export type StockIndexTuple = [
+  string,
+  string,
+  string,
+  string | undefined,
+  string | undefined,
+  string[],
+  StockIndexMarket,
+  StockIndexAssetType,
+  boolean,
+  number | undefined,
+];
+
+export type StockIndexData = StockIndexItem[] | StockIndexTuple[];
 
 export type SystemConfigCategory =
   | 'agent'

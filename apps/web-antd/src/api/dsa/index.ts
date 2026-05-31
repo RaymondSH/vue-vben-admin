@@ -4,5 +4,6 @@ export * from './analysis';
 export * from './backtest';
 export * from './history';
 export * from './portfolio';
+export * from './stocks';
 export * from './system';
 export * from './types';
