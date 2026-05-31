@@ -6,7 +6,7 @@ import { computed, watch } from 'vue';
 import { $t } from '@vben/locales';
 
 import { useVbenModal } from '@vben-core/popup-ui';
-import { Slot, VbenAvatar } from '@vben-core/shadcn-ui';
+import { VbenAvatar } from '@vben-core/shadcn-ui';
 
 interface Props extends AuthenticationProps {
   avatar?: string;
@@ -35,6 +35,10 @@ watch(
 
 const getZIndex = computed(() => {
   return props.zIndex || calcZIndex();
+});
+
+const avatarSrc = computed(() => {
+  return props.avatar || '';
 });
 
 /**
@@ -80,16 +84,12 @@ function calcZIndex() {
       :z-index="getZIndex"
       class="border-none px-10 py-6 text-center shadow-xl sm:w-150 sm:rounded-2xl md:h-[unset]"
     >
-      <VbenAvatar :src="avatar" class="mx-auto mb-6 size-20" />
-      <Slot
-        :show-forget-password="false"
-        :show-register="false"
-        :show-remember-me="false"
-        :sub-title="$t('authentication.loginAgainSubTitle')"
-        :title="$t('authentication.loginAgainTitle')"
-      >
-        <slot> </slot>
-      </Slot>
+      <VbenAvatar :src="avatarSrc" class="mx-auto mb-6 size-20" />
+      <div class="mb-4">
+        <h2 class="text-2xl font-semibold">{{ $t('authentication.loginAgainTitle') }}</h2>
+        <p class="text-muted-foreground mt-1">{{ $t('authentication.loginAgainSubTitle') }}</p>
+      </div>
+      <slot> </slot>
     </Modal>
   </div>
 </template>
