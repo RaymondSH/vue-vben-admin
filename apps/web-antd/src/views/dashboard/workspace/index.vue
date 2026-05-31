@@ -8,6 +8,7 @@ import type {
 } from '#/api';
 
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
 
@@ -101,6 +102,8 @@ const filters = reactive({
   stockCode: '',
 });
 const historyTotal = ref(0);
+const route = useRoute();
+const router = useRouter();
 
 let eventSource: EventSource | null = null;
 let taskPollTimer: null | number = null;
@@ -149,6 +152,13 @@ function statusTone(status: string) {
 
 function normalizeTask(data: Record<string, unknown>): TaskInfo {
   return toCamelCase<TaskInfo>(data);
+}
+
+function hydrateFromRouteQuery() {
+  const stock = route.query.stock;
+  if (typeof stock === 'string' && stock.trim()) {
+    query.value = stock.trim();
+  }
 }
 
 function upsertTask(task: TaskInfo) {
@@ -243,6 +253,33 @@ function validateQuery() {
     return '';
   }
   return value;
+}
+
+function buildReportFollowUpContext(report: AnalysisReport) {
+  return {
+    report_meta: report.meta,
+    report_summary: report.summary,
+    report_strategy: report.strategy,
+    report_context_snapshot: report.details?.contextSnapshot,
+  };
+}
+
+function askFollowUp() {
+  const report = activeReport.value?.report;
+  if (!report) return;
+  const prompt = [
+    `${report.meta.stockCode} ${report.meta.stockName}`,
+    '基于这份分析报告，帮我进一步判断接下来应该如何操作。',
+  ].join(' ');
+  router.push({
+    path: '/agent/chat',
+    query: {
+      context: encodeURIComponent(
+        JSON.stringify(buildReportFollowUpContext(report)),
+      ),
+      prompt,
+    },
+  });
 }
 
 async function refreshTaskUntilDone(taskId: string) {
@@ -407,6 +444,7 @@ function connectTaskStream() {
 }
 
 onMounted(async () => {
+  hydrateFromRouteQuery();
   await Promise.allSettled([
     loadSetupStatus(),
     loadSkills(),
@@ -565,6 +603,7 @@ onBeforeUnmount(() => {
                   <Tag :color="scoreTone(reportSummary?.sentimentScore)">
                     评分 {{ reportSummary?.sentimentScore ?? '-' }}
                   </Tag>
+                  <Button type="primary" @click="askFollowUp">追问</Button>
                   <Button @click="loadMarkdown">Markdown</Button>
                 </Space>
               </div>

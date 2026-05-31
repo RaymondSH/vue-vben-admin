@@ -7,6 +7,7 @@ import type {
 } from '#/api';
 
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 
 import { Page } from '@vben/common-ui';
 
@@ -66,8 +67,12 @@ const messagesLoading = ref(false);
 const chatError = ref('');
 const copiedMessageId = ref('');
 const messagesRef = ref<HTMLElement | null>(null);
+const followUpContext = ref<null | Record<string, unknown>>(null);
+const followUpSource = ref('');
 
 let abortController: AbortController | null = null;
+const route = useRoute();
+const router = useRouter();
 
 const selectedSkillNames = computed(() => {
   if (selectedSkillIds.value.length === 0) return ['通用'];
@@ -125,6 +130,41 @@ function scrollToBottom() {
       node.scrollTop = node.scrollHeight;
     }
   });
+}
+
+function parseInitialContext(value: unknown) {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  try {
+    return JSON.parse(decodeURIComponent(value)) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+function hydrateFromRouteQuery() {
+  const prompt = route.query.prompt;
+  if (typeof prompt === 'string' && prompt.trim()) {
+    input.value = prompt;
+  }
+  const context = parseInitialContext(route.query.context);
+  if (context) {
+    followUpContext.value = context;
+    const meta = context.report_meta;
+    if (meta && typeof meta === 'object') {
+      const stockCode =
+        (meta as { stock_code?: unknown; stockCode?: unknown }).stockCode ||
+        (meta as { stock_code?: unknown }).stock_code;
+      const stockName =
+        (meta as { stock_name?: unknown; stockName?: unknown }).stockName ||
+        (meta as { stock_name?: unknown }).stock_name;
+      followUpSource.value = [stockCode, stockName].filter(Boolean).join(' ');
+    } else {
+      followUpSource.value = '分析报告';
+    }
+  }
+  if (prompt || route.query.context) {
+    router.replace({ path: route.path, query: {} });
+  }
 }
 
 function updateSessionPreview(title: string) {
@@ -249,6 +289,7 @@ async function sendMessage(overrideText?: string, overrideSkillId?: string) {
     const response = await chatStreamApi(
       {
         message: text,
+        context: followUpContext.value ?? undefined,
         sessionId: sessionId.value,
         skills: skillsForRequest.length > 0 ? skillsForRequest : undefined,
       },
@@ -292,6 +333,8 @@ async function sendMessage(overrideText?: string, overrideSkillId?: string) {
         thinkingSteps: [...progressSteps.value],
       },
     ];
+    followUpContext.value = null;
+    followUpSource.value = '';
     await loadSessions();
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') return;
@@ -375,6 +418,7 @@ function confirmDeleteSession(targetSession: ChatSessionItem) {
 
 onMounted(async () => {
   persistSessionId(getInitialSessionId());
+  hydrateFromRouteQuery();
   await Promise.allSettled([loadSkills(), loadSessions()]);
   const exists = sessions.value.some(
     (item) => item.sessionId === sessionId.value,
@@ -509,6 +553,14 @@ onBeforeUnmount(() => {
             :message="chatError"
             type="error"
             @close="chatError = ''"
+          />
+
+          <Alert
+            v-if="followUpContext"
+            class="chat-error"
+            show-icon
+            type="info"
+            :message="`已带入${followUpSource || '分析报告'}上下文，下一次发送会基于该报告继续追问。`"
           />
 
           <div class="composer">
